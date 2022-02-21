@@ -11,13 +11,10 @@ def Train(X, Y, iter = 15):
     b = 0
     eta = 1
     G = [[0] * N for i in range(N)]
-    print(G)
     for i in range(N) :
         for j in range(N):
             x = X[i] * X[j].T
-            G[i][j] = np.asarray(x)[0][0]
-    G = np.mat(G)
-    print(G)
+            G[i][j] = int(x)
     for i in range(iter):
         print("第%d次迭代，alpha = "%i, alpha, "b = %d"%b)
         flag = 1

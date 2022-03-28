@@ -2,9 +2,14 @@ import pandas as pd
 import numpy as np
 import random
 import time
+import matplotlib.pyplot as plt
+from sklearn import metrics
 
 from sklearn.model_selection import train_test_split  #这里需要修改一下库名
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import PrecisionRecallDisplay
+from sklearn.metrics import roc_curve, auc
 
 class Perceptron(object):
 
@@ -53,6 +58,26 @@ class Perceptron(object):
         return labels             # 返回预测值
 
 
+def drawPR(P, R) :
+    plt.figure("P-R curve")
+    plt.title('Precision/Recall Curve')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.plot(P, R)
+    plt.show()
+    return
+
+def drawROC(fpr, tpr, auc):
+    plt.plot(fpr, tpr, color = 'darkorange', lw = 2, label = "ROC curve (area = %0.2f)" % auc)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.title('ROC Curve')
+    plt.xlabel('FPR')
+    plt.ylabel('TPR')
+    plt.legend(loc = "lower right")
+    plt.show()
+    return 
+
 if __name__ == '__main__':
 
     # 读取数据
@@ -92,3 +117,10 @@ if __name__ == '__main__':
     # 计算该系统的预测正确率
     score = accuracy_score(test_labels, test_predict)
     print("The accruacy socre is ", score)   # 输出预测正确率
+    #PR curve
+    precision, recall, thresholds = precision_recall_curve(test_labels, test_predict)
+    drawPR(precision, recall)
+    #ROC curve
+    fpr, tpr, thresholds = metrics.roc_curve(test_labels, test_predict)
+    auc = metrics.auc(fpr, tpr)
+    drawROC(fpr, tpr, auc)

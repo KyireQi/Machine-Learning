@@ -6,9 +6,14 @@ import numpy as np
 import cv2
 import random
 import time
+import matplotlib.pyplot as plt
+from sklearn import metrics
 
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import PrecisionRecallDisplay
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_curve, auc
 
 # 利用opencv获取图像hog特征
 def get_hog_features(trainset):
@@ -88,6 +93,26 @@ def Predict(testset,trainset,train_labels):
 
     return np.array(predict) # 返回ndarray类型的结果
 
+def drawPR(P, R) :
+    plt.figure("P-R curve")
+    plt.title('Precision/Recall Curve')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.plot(P, R)
+    plt.show()
+    return
+
+def drawROC(fpr, tpr, auc):
+    plt.plot(fpr, tpr, color = 'darkorange', lw = 2, label = "ROC curve (area = %0.2f)" % auc)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.title('ROC Curve')
+    plt.xlabel('FPR')
+    plt.ylabel('TPR')
+    plt.legend(loc = "lower right")
+    plt.show()
+    return 
+
 k = 10  # 定义K的大小
 
 if __name__ == '__main__':
@@ -126,3 +151,11 @@ if __name__ == '__main__':
     # 计算精确度
     score = accuracy_score(test_labels,test_predict)
     print ("The accruacy socre is ", score)
+
+    #画出PR图
+    precision, recall, thresholds = precision_recall_curve(test_labels, test_predict)
+    drawPR(precision, recall)
+    #ROC
+    fpr, tpr, thresholds = metrics.roc_curve(test_labels, test_predict)
+    auc = metrics.auc(fpr, tpr)
+    drawROC(fpr, tpr, auc)

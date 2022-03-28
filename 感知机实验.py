@@ -58,24 +58,24 @@ class Perceptron(object):
         return labels             # 返回预测值
 
 
-def drawPR(P, R) :
-    plt.figure("P-R curve")
-    plt.title('Precision/Recall Curve')
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.plot(P, R)
-    plt.show()
+def drawPR(P, R) :  #画出PR曲线
+    plt.figure("P-R curve") #定义窗口名
+    plt.title('Precision/Recall Curve') # 图像标题
+    plt.xlabel('Recall') #x轴名称
+    plt.ylabel('Precision') #y轴名称
+    plt.plot(P, R) # 使用pyplot的plot方法作图
+    plt.show() #显示图像
     return
 
 def drawROC(fpr, tpr, auc):
-    plt.plot(fpr, tpr, color = 'darkorange', lw = 2, label = "ROC curve (area = %0.2f)" % auc)
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.title('ROC Curve')
-    plt.xlabel('FPR')
-    plt.ylabel('TPR')
-    plt.legend(loc = "lower right")
-    plt.show()
+    plt.plot(fpr, tpr, color = 'darkorange', lw = 2, label = "ROC curve (area = %0.2f)" % auc) # 传入参数分别是：假正例率，真正例率，线条宽度，标签（加入了AUC的值）
+    plt.xlim([0.0, 1.0]) # 设置x轴的范围
+    plt.ylim([0.0, 1.05]) # 设置y的范围
+    plt.title('ROC Curve') # 设置标题
+    plt.xlabel('FPR') # 设置x轴名称
+    plt.ylabel('TPR') # 设置y轴名称
+    plt.legend(loc = "lower right") # 标签位置选择右下
+    plt.show() # 显示图像
     return 
 
 if __name__ == '__main__':
@@ -118,9 +118,9 @@ if __name__ == '__main__':
     score = accuracy_score(test_labels, test_predict)
     print("The accruacy socre is ", score)   # 输出预测正确率
     #PR curve
-    precision, recall, thresholds = precision_recall_curve(test_labels, test_predict)
-    drawPR(precision, recall)
+    precision, recall, thresholds = precision_recall_curve(test_labels, test_predict) # 调用precision_recall_curve方法，返回正确率、召回率和阈值集合
+    drawPR(precision, recall) # 画出PR图
     #ROC curve
-    fpr, tpr, thresholds = metrics.roc_curve(test_labels, test_predict)
-    auc = metrics.auc(fpr, tpr)
-    drawROC(fpr, tpr, auc)
+    fpr, tpr, thresholds = metrics.roc_curve(test_labels, test_predict) # 调用metrics.roc_curve方法，返回fpr,tpr和阈值集合
+    auc = metrics.auc(fpr, tpr) # 调用auc方法返回AUC的值
+    drawROC(fpr, tpr, auc) # 画出ROC图

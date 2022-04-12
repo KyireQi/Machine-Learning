@@ -1,19 +1,23 @@
 #encoding=utf-8
 
-from queue import PriorityQueue
 import pandas as pd
 import numpy as np
 import cv2
-import random
 import time
-
+import re
+from bs4 import BeautifulSoup
+from nltk.corpus import stopwords
+from tqdm import tqdm
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+
+stops = set(stopwords.words("english"))
 
 # 二值化
 def binaryzation(img):
     cv_img = img.astype(np.uint8)
-    cv2.threshold(cv_img,50,1,cv2.THRESH_BINARY_INV,cv_img) 
+    cv2.threshold(cv_img,0,1,cv2.THRESH_BINARY_INV,cv_img) 
     return cv_img
 
 def Train(trainset, train_labels):
@@ -27,16 +31,12 @@ def Train(trainset, train_labels):
         prior_probability[label] += 1
         for j in range(feature_len) :
             conditional_probability[label][j][img[j]] += 1
-    
-    print(prior_probability)
 
     for i in range(class_num):
         for j in range(feature_len):
             conditional_probability[i][j][0] = (conditional_probability[i][j][0] + 1) / (prior_probability[i] + 2)
             conditional_probability[i][j][1] = (conditional_probability[i][j][1] + 1) / (prior_probability[i] + 2)
-
-    prior_probability /= (len(train_labels) + 10)
-
+        prior_probability[i] = (prior_probability[i] + 1) / (len(train_labels) + 10)
     return prior_probability, conditional_probability
 
 # 计算概率
@@ -57,7 +57,7 @@ def Predict(testset,prior_probability,conditional_probability):
         max_label = 0
         max_probability = calculate_probability(img, 0, prior_probability,conditional_probability)
 
-        for j in range(1,10):
+        for j in range(1, 2):
             probability = calculate_probability(img, j, prior_probability,conditional_probability)
 
             if max_probability < probability:
@@ -69,8 +69,20 @@ def Predict(testset,prior_probability,conditional_probability):
     return np.array(predict)
 
 
-class_num = 10
-feature_len = 784
+class_num = 2
+feature_len = 5000
+
+def DataWash(Input) :
+    # 去掉html
+    review_txt = BeautifulSoup(Input).get_text()
+    # 正则表达式
+    review_txt = re.sub("[^a-zA-Z]", " ", review_txt)
+    # 小写化所有的词，并转成词lists
+    words = review_txt.lower().split()
+    # 删除停用词
+    meaning_words = [w for w in words if not w in stops]
+    words = " ".join(meaning_words)
+    return words
 
 if __name__ == '__main__':
 
@@ -78,14 +90,20 @@ if __name__ == '__main__':
 
     time_1 = time.time()
 
-    raw_data = pd.read_csv('train.csv',header=0)
-    data = raw_data.values
+    train = pd.read_csv(r"labeledTrainData.tsv", header = 0, delimiter = "\t", quoting = 3)
+    labels = train["sentiment"].values
+    #训练集清理
+    clean_train_reviews = []
+    for i in tqdm(range(0, len(train["review"]))):
+        clean_train_reviews.append(DataWash(train['review'][i]))
 
-    imgs = data[0::,1::]
-    labels = data[::,0]
+    # 特征处理
+    vectorizer = CountVectorizer(analyzer = "word", tokenizer = None, preprocessor = None, stop_words = None, max_features = 5000)
+    train_data_features = vectorizer.fit_transform(clean_train_reviews)
+    train_data_features = train_data_features.toarray()
 
     # 选取 2/3 数据作为训练集， 1/3 数据作为测试集
-    train_features, test_features, train_labels, test_labels = train_test_split(imgs, labels, test_size=0.33, random_state=23323)
+    train_features, test_features, train_labels, test_labels = train_test_split(train_data_features, labels, test_size=0.33, random_state=23323)
     # print train_features.shape
     # print train_features.shape
 
@@ -102,5 +120,5 @@ if __name__ == '__main__':
     time_4 = time.time()
     print ('predicting cost ',time_4 - time_3,' second','\n')
 
-    score = accuracy_score(test_labels,test_predict)
+    score = accuracy_score(test_labels, test_predict)
     print ("The accruacy socre is ", score)

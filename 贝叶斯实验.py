@@ -6,11 +6,16 @@ import cv2
 import time
 import re
 from bs4 import BeautifulSoup
+import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
 from tqdm import tqdm
+from sklearn import metrics
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import PrecisionRecallDisplay
+from sklearn.metrics import roc_curve, auc
 
 stops = set(stopwords.words("english"))
 
@@ -23,7 +28,6 @@ def binaryzation(img):
 def Train(trainset, train_labels):
     prior_probability = np.zeros(class_num)                         # 先验概率
     conditional_probability = np.zeros((class_num, feature_len, 2))   # 条件概率
-
     # 计算先验概率及条件概率
     for i in range(len(train_labels)):
         img = binaryzation(trainset[i])     # 图片二值化
@@ -49,28 +53,33 @@ def calculate_probability(img,label,prior_probability,conditional_probability):
 
 def Predict(testset,prior_probability,conditional_probability):
     predict = []
-
     for img in testset:
         # 图像二值化
         img = binaryzation(img)
-
         max_label = 0
         max_probability = calculate_probability(img, 0, prior_probability,conditional_probability)
-
         for j in range(1, 2):
             probability = calculate_probability(img, j, prior_probability,conditional_probability)
-
             if max_probability < probability:
                 max_label = j
                 max_probability = probability
-
         predict.append(max_label)
-
     return np.array(predict)
 
 
 class_num = 2
 feature_len = 5000
+
+def drawROC(fpr, tpr, auc):
+    plt.plot(fpr, tpr, color = 'darkorange', lw = 2, label = "ROC curve (area = %0.2f)" % auc) # 传入参数分别是：假正例率，真正例率，线条宽度，标签（加入了AUC的值）
+    plt.xlim([0.0, 1.0]) # 设置x轴的范围
+    plt.ylim([0.0, 1.05]) # 设置y的范围
+    plt.title('ROC Curve') # 设置标题
+    plt.xlabel('FPR') # 设置x轴名称
+    plt.ylabel('TPR') # 设置y轴名称
+    plt.legend(loc = "lower right") # 标签位置选择右下
+    plt.show() # 显示图像
+    return 
 
 def DataWash(Input) :
     # 去掉html
@@ -122,3 +131,7 @@ if __name__ == '__main__':
 
     score = accuracy_score(test_labels, test_predict)
     print ("The accruacy socre is ", score)
+
+    fpr, tpr, thresholds = metrics.roc_curve(test_labels, test_predict) # 调用metrics.roc_curve方法，返回fpr,tpr和阈值集合
+    auc = metrics.auc(fpr, tpr) # 调用auc方法返回AUC的值
+    drawROC(fpr, tpr, auc) # 画出ROC图
